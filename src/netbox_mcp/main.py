@@ -96,9 +96,7 @@ async def list_sites() -> dict[str, Any]:
 
 
 @mcp.tool()
-async def list_devices(
-    name: str = "", site: str = "", role: str = ""
-) -> dict[str, Any]:
+async def list_devices(name: str = "", site: str = "", role: str = "") -> dict[str, Any]:
     """List physical devices in NetBox.
 
     Args:

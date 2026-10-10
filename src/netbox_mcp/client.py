@@ -58,7 +58,9 @@ class NetboxClient:
             raise NetboxError(f"NetBox {endpoint} HTTP {resp.status_code}: {resp.text[:300]}")
         data = resp.json()
         if not isinstance(data, dict):
-            raise NetboxError(f"NetBox {endpoint} returned a non-dict payload: {type(data).__name__}")
+            raise NetboxError(
+                f"NetBox {endpoint} returned a non-dict payload: {type(data).__name__}"
+            )
         return data
 
     async def list(self, endpoint: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -80,7 +82,9 @@ class NetboxClient:
     async def sites(self) -> dict[str, Any]:
         return await self.list("dcim/sites")
 
-    async def devices(self, name: str | None = None, site: str | None = None, role: str | None = None) -> dict[str, Any]:
+    async def devices(
+        self, name: str | None = None, site: str | None = None, role: str | None = None
+    ) -> dict[str, Any]:
         params: dict[str, Any] = {}
         if name:
             params["name__ic"] = name
@@ -137,7 +141,9 @@ class NetboxClient:
     async def vlans(self) -> dict[str, Any]:
         return await self.list("ipam/vlans")
 
-    async def ip_addresses(self, address: str | None = None, family: int | None = None) -> dict[str, Any]:
+    async def ip_addresses(
+        self, address: str | None = None, family: int | None = None
+    ) -> dict[str, Any]:
         params: dict[str, Any] = {}
         if address:
             params["address"] = address
