@@ -1,18 +1,15 @@
 """Configuration management for the NetBox MCP Server using Pydantic Settings."""
 
+from basalto_mcp import MCPBaseSettings
 from pydantic import Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class Settings(BaseSettings):
-    """Application settings loaded from environment variables and .env file."""
+class Settings(MCPBaseSettings):
+    """Application settings loaded from environment variables and .env file.
 
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        case_sensitive=False,
-        extra="ignore",
-    )
+    Inherits ``.env`` loading, case-insensitivity, and the optional
+    ``mcp_auth_token`` (``MCP_AUTH_TOKEN``) from :class:`MCPBaseSettings`.
+    """
 
     netbox_url: str = Field(
         default="https://netbox.apps.stdout.pt",
@@ -24,12 +21,6 @@ class Settings(BaseSettings):
         default="",
         description="NetBox API token (V2 bearer, form nbt_<key>.<plaintext>)",
         validation_alias="NETBOX_TOKEN",
-    )
-
-    mcp_auth_token: str | None = Field(
-        default=None,
-        description="Optional bearer token required on HTTP transports",
-        validation_alias="MCP_AUTH_TOKEN",
     )
 
     verify_ssl: bool = Field(

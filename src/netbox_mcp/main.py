@@ -7,18 +7,17 @@ GET against the NetBox API. There is no write path and no ALLOW_WRITE flag.
 from __future__ import annotations
 
 import importlib.metadata
-import os
-from typing import Any, Literal, cast
+from typing import Any
 
+from basalto_mcp import make_auth, serve
 from fastmcp import FastMCP
 
-from .auth import StaticTokenAuth
 from .client import NetboxClient, NetboxError
 from .config import Settings
 
 settings = Settings()
 
-_auth_provider = StaticTokenAuth(settings.mcp_auth_token) if settings.mcp_auth_token else None
+_auth_provider = make_auth(settings, client_id="netbox-mcp-server")
 mcp = FastMCP("NetBox MCP Server", auth=_auth_provider)
 
 if _auth_provider is not None:
@@ -309,29 +308,8 @@ async def list_vrfs() -> dict[str, Any]:
 
 def main() -> None:
     """Main entry point for the MCP server."""
-    import uvicorn
-    from starlette.middleware.cors import CORSMiddleware
-
-    transport = os.getenv("FASTMCP_TRANSPORT", "stdio")
-    host = os.getenv("FASTMCP_HOST", "0.0.0.0")
-    port = int(os.getenv("FASTMCP_PORT", "3102"))
-
-    print(f"Starting NetBox MCP Server (transport={transport}, port={port})")
     print(f"NetBox URL: {settings.netbox_url}")
-
-    if transport in ("streamable-http", "http", "sse"):
-        http_transport = cast(Literal["http", "streamable-http", "sse"], transport)
-        starlette_app = mcp.http_app(transport=http_transport)
-        cors_app = CORSMiddleware(
-            app=starlette_app,
-            allow_origins=["*"],
-            allow_methods=["*"],
-            allow_headers=["*"],
-        )
-        uvicorn.run(cors_app, host=host, port=port, lifespan="on")
-    else:
-        run_transport = cast(Literal["stdio", "http", "sse", "streamable-http"], transport)
-        mcp.run(transport=run_transport)
+    serve(mcp, default_port=3102)
 
 
 if __name__ == "__main__":

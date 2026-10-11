@@ -1,8 +1,8 @@
 """Tests for config loading and static-token auth."""
 
 import pytest
+from basalto_mcp import StaticTokenAuth
 
-from netbox_mcp.auth import StaticTokenAuth
 from netbox_mcp.config import Settings
 
 
@@ -29,7 +29,7 @@ def test_settings_env(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_auth_accepts_correct_token():
-    a = StaticTokenAuth("secret")
+    a = StaticTokenAuth("secret", client_id="netbox-mcp-server")
     tok = await a.verify_token("secret")
     assert tok is not None
     assert tok.client_id == "netbox-mcp-server"
