@@ -418,8 +418,8 @@ async def update_virtual_machine(
 async def delete_virtual_machine(name: str) -> dict[str, Any]:
     """Delete a virtual machine by name (write).
 
-    Deleting the VM cascades to its interfaces; IPs assigned to those interfaces
-    become unassigned (they are NOT deleted). Delete them separately if needed.
+    Deleting the VM also deletes its interfaces and any IPs assigned to them
+    (cascade). No separate IP cleanup is needed.
 
     Args:
         name: VM name.
