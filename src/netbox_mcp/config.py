@@ -40,3 +40,23 @@ class Settings(MCPBaseSettings):
         description="Log level (DEBUG, INFO, WARNING, ERROR)",
         validation_alias="NETBOX_LOG_LEVEL",
     )
+
+    allow_write: bool = Field(
+        default=False,
+        description=(
+            "Enable the create/update/delete tools. Read tools always work; "
+            "write tools refuse with a clear error unless this is true."
+        ),
+        validation_alias="NETBOX_ALLOW_WRITE",
+    )
+
+    host_header: str = Field(
+        default="",
+        description=(
+            "Optional Host header to send instead of the URL's host. Needed when "
+            "NETBOX_URL is the in-cluster service name (e.g. "
+            "http://netbox.netbox.svc.cluster.local) but Django ALLOWED_HOSTS only "
+            "accepts the public FQDN."
+        ),
+        validation_alias="NETBOX_HOST_HEADER",
+    )

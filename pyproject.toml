@@ -1,6 +1,6 @@
 [project]
 name = "netbox-mcp-server"
-version = "0.1.0"
+version = "0.3.0"
 description = "A Model Context Protocol (MCP) server for the NetBox DCIM/IPAM API"
 authors = [
     {name = "basalto", email = "noreply@github.com"}

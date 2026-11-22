@@ -37,12 +37,15 @@ class NetboxClient:
         timeout: float = 15.0,
         verify: bool = True,
         transport: httpx.AsyncBaseTransport | None = None,
+        host_header: str = "",
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         headers = {"Accept": "application/json"}
         if token:
             headers["Authorization"] = f"Token {token}"
+        if host_header:
+            headers["Host"] = host_header
         self._client = httpx.AsyncClient(
             timeout=timeout, verify=verify, headers=headers, transport=transport
         )
@@ -74,6 +77,52 @@ class NetboxClient:
         data = await self.list(endpoint, params)
         results = data.get("results", [])
         return results[0] if results else None
+
+    async def resolve_id(self, endpoint: str, params: dict[str, Any]) -> int | None:
+        """Resolve the id of the first object matching params, or None."""
+        obj = await self.get_first(endpoint, params)
+        return obj["id"] if obj else None
+
+    # ------------------------------------------------------------------
+    # Write (POST/PATCH/DELETE)
+    # ------------------------------------------------------------------
+
+    async def _write(
+        self,
+        method: str,
+        endpoint: str,
+        data: dict[str, Any] | None = None,
+        obj_id: int | None = None,
+    ) -> dict[str, Any]:
+        """POST/PATCH/DELETE one API endpoint and return the parsed JSON dict."""
+        url = f"{self.base_url}/api/{endpoint}/"
+        if obj_id is not None:
+            url += f"{obj_id}/"
+        resp = await self._client.request(method, url, json=data)
+        if resp.status_code >= 400:
+            raise NetboxError(
+                f"NetBox {method} {endpoint} HTTP {resp.status_code}: {resp.text[:300]}"
+            )
+        if resp.status_code == 204:
+            return {}
+        body = resp.json()
+        if not isinstance(body, dict):
+            raise NetboxError(
+                f"NetBox {method} {endpoint} returned a non-dict payload: {type(body).__name__}"
+            )
+        return body
+
+    async def create(self, endpoint: str, data: dict[str, Any]) -> dict[str, Any]:
+        """Create an object (POST). Returns the created object."""
+        return await self._write("POST", endpoint, data)
+
+    async def update(self, endpoint: str, obj_id: int, data: dict[str, Any]) -> dict[str, Any]:
+        """Update an object in place (PATCH). Returns the updated object."""
+        return await self._write("PATCH", endpoint, data, obj_id)
+
+    async def delete(self, endpoint: str, obj_id: int) -> dict[str, Any]:
+        """Delete an object (DELETE). Returns an empty dict on success."""
+        return await self._write("DELETE", endpoint, obj_id=obj_id)
 
     # ------------------------------------------------------------------
     # DCIM (sites, devices, interfaces, roles)

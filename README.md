@@ -4,8 +4,10 @@ Read-only MCP server for the homelab NetBox DCIM/IPAM API — the source of trut
 for hosts, VMs, IPs, prefixes, VLANs, sites, and clusters. Agents query it
 instead of reading hardcoded prose, so "what exists" can't drift.
 
-Read-only by design (matching the other homelab MCP servers): every tool is a
-GET. No write path, no ALLOW_WRITE flag.
+Write tools (create/update/delete for VMs, interfaces, IPs, devices, prefixes
+and VLANs) are included but gated behind `NETBOX_ALLOW_WRITE=true`; read tools
+always work. The `provision_vm` tool is the get-or-create seed.py replacement
+for the common VM/LXC case.
 
 ## Config (.env)
 
@@ -17,11 +19,16 @@ GET. No write path, no ALLOW_WRITE flag.
 | `NETBOX_VERIFY_SSL` | `true` | Verify the LE cert (leave true) |
 | `NETBOX_REQUEST_TIMEOUT` | `15` | HTTP timeout (s) |
 | `NETBOX_LOG_LEVEL` | `INFO` | Log level |
+| `NETBOX_ALLOW_WRITE` | `false` | Enable create/update/delete tools |
+| `NETBOX_HOST_HEADER` | empty | Host header override (for the in-cluster service URL) |
 
-Minting a token (in the NetBox pod):
+Minting a token (in the NetBox pod — import from `users.choices`, NOT
+`users.models`; the plaintext is the transient `t.token`):
 
-    Token.objects.create(user=u, version=TokenVersionChoices.V2)
-    auth header = t.get_auth_header_prefix() + t._token
+    from users.models import Token
+    from users.choices import TokenVersionChoices
+    t = Token.objects.create(user=u, description="...", version=TokenVersionChoices.V2)
+    print(t.get_auth_header_prefix() + t.token)   # "Bearer nbt_<key>.<plaintext>"
 
 ## Run
 
@@ -33,7 +40,12 @@ Minting a token (in the NetBox pod):
 
 ## Tools
 
-`health_check`, `list_sites`, `list_devices`, `get_device`, `list_interfaces`,
-`list_device_roles`, `list_virtual_machines`, `get_virtual_machine`,
-`list_clusters`, `list_vm_interfaces`, `list_prefixes`, `list_vlans`,
-`list_ip_addresses`, `list_vrfs`.
+Read: `health_check`, `list_sites`, `list_devices`, `get_device`,
+`list_interfaces`, `list_device_roles`, `list_virtual_machines`,
+`get_virtual_machine`, `list_clusters`, `list_vm_interfaces`, `list_prefixes`,
+`list_vlans`, `list_ip_addresses`, `list_vrfs`.
+
+Write (gated behind `NETBOX_ALLOW_WRITE=true`): `create_virtual_machine`,
+`update_virtual_machine`, `delete_virtual_machine`, `create_vm_interface`,
+`create_ip_address`, `delete_ip_address`, `create_device`, `delete_device`,
+`create_prefix`, `create_vlan`, `provision_vm`.
